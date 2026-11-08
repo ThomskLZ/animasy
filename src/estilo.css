@@ -1,0 +1,163 @@
+:root {
+  --bg: #1b2030; --panel: #242a3b; --panel2: #2c3347; --panel3: #343c53; --txt: #e9edf5; --mut: #98a2b8;
+  --acc: #f3b94d; --acc-txt: #1b2030; --ok: #7ed07a; --erro: #ff7a6b; --borda: #3a4258;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--txt); font: 13px/1.4 system-ui, "Segoe UI", sans-serif;
+       display: grid; grid-template-columns: 230px 1fr 290px; height: 100vh; overflow: hidden; }
+aside { background: var(--panel); overflow-y: auto; padding: 10px; border-right: 1px solid var(--borda); }
+aside.dir { border-right: 0; border-left: 1px solid var(--borda); padding: 0; display: flex; flex-direction: column; }
+h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--mut); margin: 12px 0 5px; }
+kbd { background: var(--panel3); border: 1px solid var(--borda); border-radius: 4px; padding: 0 4px; font-size: 11px; }
+svg { display: block; }
+
+/* coluna da esquerda */
+.topo { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.marca { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; }
+.logo { width: 24px; height: 24px; border-radius: 6px; background: var(--acc); color: var(--acc-txt); display: grid; place-items: center; font-weight: 800; }
+.acoes { display: flex; gap: 4px; }
+.grupo { display: flex; }
+.grupo .ico:first-child { border-radius: 6px 0 0 6px; }
+.grupo .ico.mini { width: 18px; border-radius: 0 6px 6px 0; border-left: 0; }
+.ico { width: 30px; height: 30px; display: grid; place-items: center; background: var(--panel2); color: var(--txt);
+       border: 1px solid var(--borda); border-radius: 6px; cursor: pointer; padding: 0; }
+.ico:hover:not(:disabled) { border-color: var(--acc); }
+.ico:disabled { opacity: .35; cursor: default; }
+.ico.sujo { background: var(--acc); color: var(--acc-txt); border-color: var(--acc); }
+.menu { position: absolute; z-index: 20; background: var(--panel2); border: 1px solid var(--borda); border-radius: 8px; padding: 4px;
+        box-shadow: 0 8px 24px #0006; min-width: 190px; }
+.menu[hidden] { display: none; }
+.menu button { display: flex; justify-content: space-between; width: 100%; text-align: left; background: none; border: 0; color: var(--txt);
+               padding: 6px 10px; border-radius: 5px; cursor: pointer; font: inherit; }
+.menu button:hover:not(:disabled) { background: var(--panel3); }
+.menu button:disabled { opacity: .4; cursor: default; }
+.menu hr { border: 0; border-top: 1px solid var(--borda); margin: 4px 2px; }
+.modelo { color: var(--mut); font-size: 12px; margin: 0 2px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.busca { display: flex; gap: 4px; margin-bottom: 6px; }
+#busca { flex: 1; min-width: 0; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--borda); background: var(--panel2); color: var(--txt); }
+#lista .item, #listaLixo .item { display: flex; align-items: center; gap: 2px; border-radius: 5px; margin: 1px 0; }
+#lista .item:hover, #listaLixo .item:hover { background: var(--panel2); }
+#lista .item.ativo { background: var(--acc); color: var(--acc-txt); }
+.item .nome { flex: 1; min-width: 0; padding: 4px 8px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item .marca-aj { color: var(--acc); padding-right: 2px; }
+.item.ativo .marca-aj { color: var(--acc-txt); }
+.item .mini { width: 22px; height: 22px; display: none; place-items: center; background: none; border: 0; color: inherit;
+              border-radius: 4px; cursor: pointer; padding: 0; opacity: .75; }
+.item:hover .mini, .item.ativo .mini { display: grid; }
+.item .mini:hover { opacity: 1; background: #0002; }
+.item input.renomear { flex: 1; min-width: 0; font: inherit; padding: 3px 7px; border-radius: 4px; border: 1px solid var(--acc); background: var(--bg); color: var(--txt); }
+#lixeira { margin-top: 12px; border-top: 1px solid var(--borda); padding-top: 8px; }
+#lixeira summary { cursor: pointer; color: var(--mut); font-size: 12px; }
+#listaLixo .item .nome { cursor: default; color: var(--mut); }
+#listaLixo .item .mini { display: grid; }
+.vazio-lista { color: var(--mut); font-size: 12px; padding: 6px 8px; }
+
+/* palco 3D */
+main { position: relative; min-width: 0; min-height: 0; }
+canvas#tela { display: block; width: 100%; height: 100%; outline: none; }
+#titulo { position: absolute; left: 14px; top: 10px; font-size: 17px; font-weight: 600; text-shadow: 0 1px 3px #0008; pointer-events: none; }
+#info { position: absolute; left: 14px; top: 34px; color: var(--mut); text-shadow: 0 1px 3px #0008; pointer-events: none; }
+#etiqueta { position: absolute; pointer-events: none; background: #000c; color: #fff; padding: 2px 7px; border-radius: 5px;
+            font-size: 12px; display: none; transform: translate(12px, -26px); white-space: nowrap; }
+#ferr3d { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 4px; }
+#ferr3d button { width: 34px; height: 32px; background: rgba(36,42,59,.9); color: var(--txt); border: 1px solid var(--borda);
+                 border-radius: 6px; cursor: pointer; font: 15px system-ui; padding: 0; }
+#ferr3d button:hover { border-color: var(--acc); }
+#ferr3d button.on { border-color: var(--acc); color: var(--acc); }
+#ferr3d hr { border: 0; height: 4px; margin: 0; }
+.flutua { position: absolute; right: 52px; top: 10px; background: rgba(28,33,48,.97); border: 1px solid var(--borda);
+          border-radius: 8px; padding: 10px 14px; font-size: 12px; line-height: 1.8; max-width: 520px; z-index: 5; }
+.flutua[hidden] { display: none; }
+#folha { position: absolute; inset: 0; background: var(--bg); display: none; cursor: pointer; z-index: 6; }
+#folha img { width: 100%; height: 100%; object-fit: contain; }
+#vazio { position: absolute; inset: 0; display: grid; place-items: center; background: var(--bg); z-index: 4; }
+#vazio[hidden] { display: none; }
+#vazio .caixa { text-align: center; padding: 36px 48px; border: 2px dashed var(--borda); border-radius: 16px; display: grid; gap: 10px; justify-items: center; }
+#vazio .alvo { color: var(--mut); }
+#vazio .grande { font-size: 18px; font-weight: 600; }
+#vazio .formatos { color: var(--mut); font-size: 12px; letter-spacing: .05em; }
+#vazio .botoes { display: flex; gap: 8px; margin-top: 6px; }
+#soltar { position: absolute; inset: 0; display: none; place-items: center; background: rgba(243,185,77,.12);
+          border: 3px dashed var(--acc); z-index: 30; pointer-events: none; font-size: 20px; font-weight: 700; color: var(--acc); }
+body.arrastando #soltar { display: grid; }
+#aviso { position: absolute; left: 50%; bottom: 72px; transform: translateX(-50%); background: rgba(24,28,42,.96); border: 1px solid var(--borda);
+         padding: 7px 14px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 8;
+         max-width: 80%; text-align: center; white-space: pre-wrap; }
+#aviso.on { opacity: 1; }
+#aviso.ok { border-color: var(--ok); }
+#aviso.erro { border-color: var(--erro); color: #ffd0ca; }
+
+/* linha do tempo */
+#barra { position: absolute; left: 10px; right: 10px; bottom: 10px; background: rgba(30,35,50,.94); border-radius: 10px;
+         padding: 6px 10px; display: flex; gap: 8px; align-items: center; }
+#barra > button { background: var(--panel2); color: var(--txt); border: 1px solid var(--borda); border-radius: 6px;
+                  padding: 4px 9px; cursor: pointer; font: inherit; }
+#linha { flex: 1; height: 46px; display: block; cursor: pointer; min-width: 0; }
+#rotulo { min-width: 64px; text-align: right; font-variant-numeric: tabular-nums; color: var(--mut); font-size: 12px; }
+#bLoopX { display: none; }
+
+/* coluna da direita */
+.abas { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--borda); flex: none; }
+.abas button { padding: 10px 0; background: var(--panel); color: var(--mut); border: 0; border-bottom: 3px solid transparent;
+               font: 600 13px system-ui; cursor: pointer; }
+.abas button.on { color: var(--txt); border-bottom-color: var(--acc); background: var(--panel2); }
+.aba { padding: 10px 12px 14px; overflow-y: auto; flex: 1; }
+.aba[hidden] { display: none; }
+.btn { background: var(--panel2); color: var(--txt); border: 1px solid var(--borda); border-radius: 6px;
+       padding: 5px 8px; cursor: pointer; font: inherit; }
+.btn:hover:not(:disabled) { border-color: var(--acc); }
+.btn:disabled { opacity: .4; cursor: default; }
+.btn.on { background: var(--acc); color: var(--acc-txt); border-color: var(--acc); font-weight: 600; }
+.btn.acc { background: var(--acc); color: var(--acc-txt); border-color: var(--acc); font-weight: 700; }
+.btn.perigo:hover:not(:disabled) { border-color: var(--erro); color: var(--erro); }
+.btn small { opacity: .6; font-size: 10px; }
+.larga { width: 100%; padding: 8px; margin: 6px 0 0; }
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 4px 0; }
+.g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin: 4px 0; }
+#ossoNome { font-size: 15px; font-weight: 700; color: var(--acc); min-height: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.corpo { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px; margin-top: 4px; }
+.corpo button { padding: 4px 2px; font-size: 11.5px; background: var(--panel3); color: var(--txt); border: 1px solid transparent;
+                border-radius: 5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.corpo button:hover { border-color: var(--acc); }
+.corpo button.on { background: var(--acc); color: var(--acc-txt); font-weight: 700; }
+.corpo button.aj { box-shadow: inset 0 -3px 0 #ff9a5c; }
+.corpo button.falta { background: transparent; border: 1px dashed var(--borda); color: var(--mut); }
+.corpo .cab { grid-column: 1 / 4; color: var(--mut); font-size: 10.5px; display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; }
+.outro { display: flex; gap: 4px; margin-top: 6px; }
+.outro select { flex: 1; min-width: 0; background: var(--panel3); color: var(--txt); border: 1px solid var(--borda); border-radius: 6px; padding: 4px 6px; font: inherit; }
+.opc { display: flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap; }
+input[type=number] { width: 52px; background: var(--panel3); color: var(--txt); border: 1px solid var(--borda); border-radius: 5px; padding: 2px 4px; }
+label.linha { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 5px 0; }
+label.linha input[type=range] { width: 120px; }
+label.check { display: flex; align-items: center; gap: 6px; margin: 6px 0; cursor: pointer; }
+.val { min-width: 42px; text-align: right; font-variant-numeric: tabular-nums; color: var(--acc); }
+
+/* diálogo */
+dialog { background: var(--panel); color: var(--txt); border: 1px solid var(--borda); border-radius: 12px; padding: 0;
+         box-shadow: 0 16px 48px #0008; min-width: 340px; max-width: min(560px, 92vw); }
+dialog::backdrop { background: #0008; }
+dialog form { padding: 18px 20px 16px; display: grid; gap: 12px; }
+dialog h3 { margin: 0; font-size: 16px; }
+dialog p { margin: 0; color: var(--mut); white-space: pre-wrap; }
+dialog .campo { display: grid; gap: 4px; }
+dialog .campo > span { color: var(--mut); font-size: 12px; }
+dialog input[type=text], dialog input[type=number], dialog select { width: 100%; background: var(--bg); color: var(--txt); border: 1px solid var(--borda);
+       border-radius: 6px; padding: 7px 9px; font: inherit; }
+dialog input:focus, dialog select:focus { outline: none; border-color: var(--acc); }
+dialog .radios { display: grid; gap: 6px; }
+dialog .radios label { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+dialog .radios label.off { opacity: .4; cursor: default; }
+dialog .rodape { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+dialog .btn { padding: 7px 14px; }
+dialog .btn.perigo-forte { background: var(--erro); border-color: var(--erro); color: #2a0d08; font-weight: 700; }
+dialog .tabela { display: grid; grid-template-columns: auto 1fr; gap: 5px 10px; align-items: center; max-height: 56vh; overflow-y: auto; padding-right: 4px; }
+dialog .tabela select { padding: 4px 6px; }
+dialog .tabela .auto { color: var(--mut); font-size: 11px; }
+
+@media (max-width: 900px) {
+  body { grid-template-columns: 1fr; grid-template-rows: 60vh auto auto; height: auto; overflow-y: auto; }
+  main { grid-row: 1; }
+  aside { grid-row: 2; border-right: 0; border-top: 1px solid var(--borda); max-height: 45vh; }
+  aside.dir { grid-row: 3; border-left: 0; }
+}

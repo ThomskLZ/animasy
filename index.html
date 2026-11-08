@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Animasy</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23f3b94d'/%3E%3Cpath d='M9 24l7-16 7 16M12 18h8' stroke='%231b2030' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+</head>
+<body>
+<aside id="esq">
+  <header class="topo">
+    <div class="marca"><span class="logo">A</span>Animasy</div>
+    <div class="acoes">
+      <button class="ico" id="bAbrir" title="Abrir modelo (Ctrl+O)" data-ico="abrir"></button>
+      <div class="grupo">
+        <button class="ico" id="bSalvar" title="Salvar .glb (Ctrl+S)" data-ico="salvar" disabled></button>
+        <button class="ico mini" id="bSalvarMenu" title="Mais opções de salvar" data-ico="seta" disabled></button>
+      </div>
+    </div>
+  </header>
+  <div id="menuSalvar" class="menu" hidden>
+    <button data-acao="salvar">Salvar <kbd>Ctrl+S</kbd></button>
+    <button data-acao="como">Salvar como…</button>
+    <button data-acao="baixar">Baixar .glb</button>
+    <hr>
+    <button data-acao="desfazer">Desfazer último salvamento</button>
+  </div>
+  <div id="modeloNome" class="modelo"></div>
+  <div class="busca">
+    <input id="busca" placeholder="Filtrar" aria-label="Filtrar animações">
+    <button class="ico" id="bNova" title="Nova animação" data-ico="mais" disabled></button>
+  </div>
+  <div id="lista"></div>
+  <details id="lixeira" hidden>
+    <summary>Lixeira <span id="nLixo"></span></summary>
+    <div id="listaLixo"></div>
+    <button class="btn larga perigo" id="bEsvaziar">Esvaziar lixeira</button>
+  </details>
+</aside>
+
+<main id="palco">
+  <canvas id="tela" tabindex="0"></canvas>
+  <div id="titulo"></div>
+  <div id="info"></div>
+  <div id="etiqueta"></div>
+  <div id="ferr3d">
+    <button data-z="1" title="Aproximar (roda do mouse)">+</button>
+    <button data-z="-1" title="Afastar (roda do mouse)">−</button>
+    <button id="bReset" title="Enquadrar (clique duplo no fundo)">⟲</button>
+    <hr>
+    <button id="tJuntas" class="on" title="Bolinhas das juntas (J)">●</button>
+    <button id="tRastro" class="on" title="Rastro do movimento (T)">〰</button>
+    <button id="tOssos" title="Esqueleto">⌇</button>
+    <button id="tLimpo" title="Esconder todas as ajudas (H)">◐</button>
+    <button id="tAjuda" title="Atalhos">?</button>
+  </div>
+  <div id="atalhos" class="flutua" hidden>
+    <b>Câmera</b>: arrastar gira · botão direito / Shift+arrastar move · roda zoom<br>
+    <kbd>espaço</kbd> tocar · <kbd>←</kbd><kbd>→</kbd> quadro · <kbd>↑</kbd><kbd>↓</kbd> animação<br>
+    <kbd>R</kbd> girar · <kbd>G</kbd> mover · <kbd>Esc</kbd> desseleciona · <kbd>Delete</kbd> tira a chave<br>
+    <kbd>Ctrl+Z</kbd>/<kbd>Ctrl+Y</kbd> desfazer/refazer · <kbd>Ctrl+C</kbd>/<kbd>Ctrl+V</kbd> copiar/colar pose<br>
+    <kbd>Ctrl+O</kbd> abrir · <kbd>Ctrl+S</kbd> salvar · <kbd>F2</kbd> renomear<br>
+    <kbd>H</kbd> esconde ajudas · <kbd>J</kbd> bolinhas · <kbd>T</kbd> rastro<br>
+    <b>Linha do tempo</b>: arrastar na régua (faixa de cima) marca um trecho em loop · clique duplo na régua tira ·
+    arrastar um losango move a chave no tempo<br>
+    <b>Ajustes</b> ficam por cima da animação original até salvar. Excluir manda pra lixeira.
+  </div>
+  <div id="folha" title="Clique pra fechar"><img alt="Folha de quadros"></div>
+  <div id="vazio">
+    <div class="caixa">
+      <div class="alvo" data-ico="soltar"></div>
+      <div class="grande">Arraste um modelo aqui</div>
+      <div class="formatos">glb · gltf · vrm · fbx</div>
+      <div class="botoes">
+        <button class="btn acc" id="bAbrir2">Abrir arquivo</button>
+        <button class="btn" id="bExemplo" title="Robô CC0 do Quaternius">Ver exemplo</button>
+      </div>
+      <button class="btn" id="bContinuar" hidden></button>
+    </div>
+  </div>
+  <div id="soltar"><div>Solte pra abrir</div></div>
+  <div id="aviso"></div>
+  <div id="barra">
+    <button id="bAnt" title="Quadro anterior (←)">◀</button>
+    <button id="bPlay" title="Tocar/pausar (espaço)">❚❚</button>
+    <button id="bProx" title="Próximo quadro (→)">▶</button>
+    <canvas id="linha"></canvas>
+    <button id="bLoopX" title="Tirar o trecho em loop">✕ loop</button>
+    <span id="rotulo"></span>
+  </div>
+</main>
+
+<aside class="dir">
+  <div class="abas">
+    <button id="abaVer" class="on">Ver</button>
+    <button id="abaAjustar">Ajustar</button>
+  </div>
+
+  <div class="aba" id="painelVer">
+    <h2>Reprodução</h2>
+    <label class="linha">Velocidade <input id="vel" type="range" min="0.05" max="2" step="0.05" value="1"><span class="val" id="velV">1,00x</span></label>
+    <label class="linha" title="Tempo de mistura ao trocar de animação">Transição (s) <input id="fade" type="range" min="0" max="0.6" step="0.01" value="0.15"><span class="val" id="fadeV">0,15</span></label>
+    <label class="check"><input id="loop" type="checkbox" checked> Repetir</label>
+    <h2>Mostrar</h2>
+    <label class="check" title="Chão andando embaixo do personagem, pra ver pé deslizando"><input id="cEsteira" type="checkbox"> Esteira</label>
+    <label class="linha" title="Velocidade da esteira">Esteira (m/s) <input id="esteiraV" type="number" step="0.05" value="0"></label>
+    <label class="check"><input id="cToon" type="checkbox"> Sombreado toon</label>
+    <label class="check"><input id="cFundo" type="checkbox"> Fundo claro</label>
+    <h2>Câmera</h2>
+    <div class="g3">
+      <button class="btn" data-cam="frente">Frente</button><button class="btn" data-cam="lado">Lado</button><button class="btn" data-cam="tres">3/4</button>
+      <button class="btn" data-cam="costas">Costas</button><button class="btn" data-cam="cima">Cima</button><button class="btn" data-cam="perto">Perto</button>
+    </div>
+    <button id="bFolha" class="btn larga" title="12 quadros da animação numa imagem só">Folha de quadros</button>
+  </div>
+
+  <div class="aba" id="painelAjustar" hidden>
+    <div id="ossoNome">—</div>
+    <div class="corpo" id="corpo"></div>
+    <div class="outro">
+      <select id="selOsso" title="Qualquer osso do esqueleto"></select>
+      <button class="ico" id="bMapa" title="Mapa do corpo: qual osso é cada parte" data-ico="mapa"></button>
+    </div>
+    <h2>Ferramenta</h2>
+    <div class="g2">
+      <button class="btn on" id="fGirar" title="Girar o osso (R)">Girar <small>R</small></button>
+      <button class="btn" id="fMover" title="Mover: mão/pé levam o braço/perna junto; quadril move o corpo (G)">Mover <small>G</small></button>
+    </div>
+    <div class="g2">
+      <label class="opc" title="O ajuste entra e sai suave em volta do quadro atual (quadros pra cada lado)"><input type="radio" name="alc" value="momento" checked> Momento ±<input id="raio" type="number" value="6" min="1" max="240"></label>
+      <label class="opc" title="O ajuste vale igual do começo ao fim"><input type="radio" name="alc" value="tudo"> Inteira</label>
+    </div>
+    <h2>Editar</h2>
+    <div class="g2">
+      <button class="btn" id="bDesfazer" title="Ctrl+Z">↶ Desfazer</button>
+      <button class="btn" id="bRefazer" title="Ctrl+Y">↷ Refazer</button>
+      <button class="btn" id="bCopiar" title="Copia a pose inteira deste quadro (Ctrl+C)">Copiar pose</button>
+      <button class="btn" id="bColar" title="Cola a pose copiada neste quadro (Ctrl+V). Bom pra fechar um loop: copie o quadro 0 e cole no último">Colar pose</button>
+      <button class="btn" id="bApagarChave" title="Tira a chave do osso selecionado neste quadro (Delete)">Tirar chave</button>
+      <button class="btn" id="bZerarOsso" title="Tira todos os ajustes do osso selecionado nesta animação">Limpar osso</button>
+    </div>
+    <label class="check" title="Mostra a animação sem os ajustes"><input id="cOriginal" type="checkbox"> Ver original</label>
+    <button id="bDescartar" class="btn larga" title="Joga fora os ajustes desta animação que ainda não foram salvos">Descartar ajustes desta animação</button>
+  </div>
+</aside>
+
+<dialog id="dlg"><form method="dialog" id="dlgForm"></form></dialog>
+<script type="module" src="./src/main.ts"></script>
+</body>
+</html>
