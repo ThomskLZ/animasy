@@ -7,6 +7,12 @@ sem estragar o original. Salva um `.glb` que serve em qualquer engine. Não prec
 
 ![Ver](docs/ver.png)
 
+> **English summary:** Animasy is a free, static web app (MIT) to view and fix animations of any rigged 3D character
+> (glb, gltf, vrm, fbx) in the browser. Non-destructive adjustment layers, scope "frame / range / whole clip", move-joint
+> IK, mirror, foot lock, loop seam, pose-to-pose, pose library, accessories on sockets, one-at-a-time retarget with
+> preview, and a verified `.glb` export (re-read and compared frame by frame before writing). No server, no Blender.
+> Run `npm install && npm run build` and open `dist/index.html`, or double-click `abrir.bat` on Windows. UI and docs are in Portuguese (pt-BR).
+
 ## Como abrir
 
 - **Windows:** dois cliques no `abrir.bat` (na primeira vez ele instala e prepara tudo; precisa do [Node.js](https://nodejs.org)).
