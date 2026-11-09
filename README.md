@@ -40,6 +40,9 @@ npm run dist:linux    # AppImage (rode no Linux)
 npm run dist:mac      # dmg (rode num Mac)
 ```
 
+**Atualização automática:** o instalador procura versão nova nos Releases ao abrir, baixa em segundo plano e pergunta
+se você quer reiniciar pra instalar. Não precisa desinstalar nada. (A versão portátil não se atualiza sozinha: baixe a nova.)
+
 Pra rodar sem empacotar: `npm run app`. Pra mexer no código com recarga ao vivo, `npm run dev` num terminal e, noutro,
 `ANIMASY_DEV_URL=http://localhost:5173 npm run app:dev`.
 

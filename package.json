@@ -1,9 +1,11 @@
 {
   "name": "animasy",
   "version": "0.1.0",
-  "description": "Ver e ajustar animações de personagens 3D (glTF) direto no navegador. Fácil, mas sem teto.",
+  "description": "Veja e ajuste animações de personagens 3D. Fácil, mas sem teto.",
   "license": "MIT",
-  "author": "ThomskLZ",
+  "author": {
+    "name": "ThomskLZ"
+  },
   "private": true,
   "type": "module",
   "scripts": {
@@ -18,6 +20,7 @@
     "dist:mac": "npm run build && electron-builder --mac dmg"
   },
   "dependencies": {
+    "electron-updater": "^6.8.11",
     "three": "^0.170.0"
   },
   "devDependencies": {
@@ -75,6 +78,31 @@
       ],
       "category": "public.app-category.graphics-design",
       "artifactName": "Animasy-${version}.${ext}"
-    }
-  }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "ThomskLZ",
+        "repo": "animasy",
+        "releaseType": "release"
+      }
+    ]
+  },
+  "homepage": "https://github.com/ThomskLZ/animasy",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ThomskLZ/animasy.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ThomskLZ/animasy/issues"
+  },
+  "keywords": [
+    "animation",
+    "gltf",
+    "glb",
+    "3d",
+    "rigging",
+    "electron",
+    "threejs"
+  ]
 }

@@ -3,6 +3,7 @@
 const { app, BrowserWindow, dialog, ipcMain, Menu } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
+const { autoUpdater } = require('electron-updater');
 
 const ESTADO = path.join(app.getPath('userData'), 'janela.json');
 const LER_OK = /\.(glb|gltf|vrm|fbx|bin|png|jpe?g|webp)$/i;
@@ -59,9 +60,29 @@ ipcMain.handle('animasy:escrever', async (_ev, caminho, bytes) => {
   return true;
 });
 
+
+// Atualização automática (só no instalador do Windows e nos pacotes de Linux/Mac; o portátil não se atualiza sozinho).
+// Procura nos Releases do GitHub, baixa em segundo plano e pergunta se quer reiniciar. Sem internet: não faz nada.
+function configurarAtualizacao(win) {
+  if (!app.isPackaged || process.env.PORTABLE_EXECUTABLE_DIR) return;
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.logger = null;
+  autoUpdater.on('error', () => { /* sem rede ou sem release novo: segue sem avisar */ });
+  autoUpdater.on('update-downloaded', async (info) => {
+    const r = await dialog.showMessageBox(win, {
+      type: 'info', buttons: ['Reiniciar agora', 'Depois'], defaultId: 0, cancelId: 1, title: 'Atualização do Animasy',
+      message: `A versão ${info.version} do Animasy está pronta.`,
+      detail: 'Reiniciar agora instala a atualização. Se for depois, ela é instalada quando você fechar o programa. Seu trabalho não é perdido: ele fica guardado.',
+    });
+    if (r.response === 0) autoUpdater.quitAndInstall();
+  });
+  setTimeout(() => { autoUpdater.checkForUpdates().catch(() => {}); }, 4000);
+}
+
 app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
-  criarJanela();
+  configurarAtualizacao(criarJanela());
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) criarJanela(); });
 });
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
