@@ -1,0 +1,15 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Permissões do Animasy: abrir/salvar arquivos escolhidos pela pessoa e lembrar a janela",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:webview:default",
+    "dialog:default",
+    "fs:allow-read-file",
+    "fs:allow-write-file",
+    { "identifier": "fs:scope", "allow": [{ "path": "**" }] },
+    "window-state:default"
+  ]
+}

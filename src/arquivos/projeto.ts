@@ -5,6 +5,7 @@ import type { Camada } from '../nucleo/camadas';
 import type { MapaCorpo } from '../nucleo/mapaCorpo';
 import type { PoseChave } from '../nucleo/poses';
 import type { ArquivoEntrada } from './abrir';
+import { ehHandleNativo, handleDe } from './nativo';
 
 export interface AnimSalva {
   id: string;
@@ -65,12 +66,16 @@ function req<T>(store: string, modo: IDBTransactionMode, f: (s: IDBObjectStore) 
   }));
 }
 
-export const guardarProjeto = (p: ProjetoSalvo) => req<void>('projetos', 'readwrite', (s) => s.put(p)).catch(() => undefined);
-export const lerProjeto = (chave: string) => req<ProjetoSalvo | undefined>('projetos', 'readonly', (s) => s.get(chave)).catch(() => undefined);
+// No programa o handle é um objeto com funções (não dá pra guardar): fica só o caminho do arquivo.
+type ComCaminho = ProjetoSalvo & { caminhoNativo?: string };
+const paraGuardar = (p: ProjetoSalvo): ProjetoSalvo => (ehHandleNativo(p.handle) ? ({ ...p, handle: undefined, caminhoNativo: p.handle.caminho } as ComCaminho) : p);
+const aoLer = (p: ProjetoSalvo | undefined) => { const c = (p as ComCaminho | undefined)?.caminhoNativo; if (p && c) p.handle = handleDe(c); return p; };
+export const guardarProjeto = (p: ProjetoSalvo) => req<void>('projetos', 'readwrite', (s) => s.put(paraGuardar(p))).catch(() => undefined);
+export const lerProjeto = (chave: string) => req<ProjetoSalvo | undefined>('projetos', 'readonly', (s) => s.get(chave)).then(aoLer).catch(() => undefined);
 export async function ultimoProjeto(): Promise<ProjetoSalvo | undefined> {
   try {
     const todos = await req<ProjetoSalvo[]>('projetos', 'readonly', (s) => s.getAll());
-    return todos.sort((a, b) => b.atualizado - a.atualizado)[0];
+    return aoLer(todos.sort((a, b) => b.atualizado - a.atualizado)[0]);
   } catch { return undefined; }
 }
 

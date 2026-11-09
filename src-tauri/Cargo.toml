@@ -1,0 +1,23 @@
+[package]
+name = "animasy"
+version = "0.1.0"
+description = "Veja e ajuste animações de personagens 3D"
+authors = ["ThomskLZ"]
+license = "MIT"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-window-state = "2"
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

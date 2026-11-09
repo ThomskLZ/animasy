@@ -2,6 +2,7 @@
 // (File System Access API quando tem; senão baixa o arquivo).
 import { AnimationClip, Object3D, PropertyBinding } from 'three';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+import { escolherNativo, noPrograma, salvarNativo } from './nativo';
 
 /** Exporta o modelo com as animações. O modelo precisa estar na pose de repouso (o exportador grava a pose atual). */
 export async function exportarGlb(root: Object3D, clips: AnimationClip[], nomeOriginal: Map<Object3D, string>): Promise<ArrayBuffer> {
@@ -29,11 +30,12 @@ export async function exportarGlb(root: Object3D, clips: AnimationClip[], nomeOr
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const W = window as any;
-export const temAcessoArquivos = () => typeof W.showOpenFilePicker === 'function';
+export const temAcessoArquivos = () => noPrograma() || typeof W.showOpenFilePicker === 'function';
 const TIPOS = [{ description: 'Modelo 3D', accept: { 'model/gltf-binary': ['.glb', '.vrm'], 'model/gltf+json': ['.gltf'], 'application/octet-stream': ['.fbx', '.bin', '.png', '.jpg', '.jpeg', '.webp'] } }];
 
 /** Escolher arquivos pra abrir (com handle, pra poder salvar por cima depois). */
 export async function escolherParaAbrir(): Promise<{ arquivos: File[]; handle?: FileSystemFileHandle } | null> {
+  if (noPrograma()) return escolherNativo();
   if (temAcessoArquivos()) {
     try {
       const hs: FileSystemFileHandle[] = await W.showOpenFilePicker({ multiple: true, types: TIPOS, excludeAcceptAllOption: false });
@@ -69,6 +71,7 @@ export async function gravarNoHandle(h: FileSystemFileHandle, bytes: ArrayBuffer
 
 /** "Salvar como": pede o lugar; sem a API, baixa. Devolve o handle novo (ou null se baixou / cancelou). */
 export async function salvarComo(bytes: ArrayBuffer, nomeSugerido: string): Promise<{ handle?: FileSystemFileHandle; modo: 'salvo' | 'baixado' } | null> {
+  if (noPrograma()) return salvarNativo(bytes, nomeSugerido);
   if (typeof W.showSaveFilePicker === 'function') {
     try {
       const h: FileSystemFileHandle = await W.showSaveFilePicker({ suggestedName: nomeSugerido, types: [{ description: 'glTF binário', accept: { 'model/gltf-binary': ['.glb'] } }] });

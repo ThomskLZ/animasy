@@ -1,5 +1,5 @@
 @echo off
-rem Animasy: abre com dois cliques.
+rem Animasy, MODO DESENVOLVIMENTO: monta a versao web e abre no navegador. O jeito normal e o animasy.exe (README).
 cd /d "%~dp0"
 where npm >nul 2>nul
 if errorlevel 1 goto abrir

@@ -31,6 +31,7 @@ import { Arvore } from './interface/arvore';
 import { CampoNumero } from './interface/campoNumero';
 import { aplicarTema, cor, lerConfig, NomeTema, salvarConfig, TEMAS } from './interface/tema';
 import roboUrl from './exemplos/robo.glb?url';
+import { noPrograma, ouvirArrasto } from './arquivos/nativo';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const fmt = (v: number, d = 2) => v.toFixed(d).replace('.', ',');
@@ -2509,6 +2510,9 @@ addEventListener('drop', async (e) => {
   }
   if (arquivos.length) abrirArquivos(await lerArquivos(arquivos), handle);
 });
+if (noPrograma()) {      // no programa o arrasto vem do Windows (com o caminho, pra salvar por cima depois)
+  ouvirArrasto((r) => { if (r.arquivos.length) lerArquivos(r.arquivos).then((a) => abrirArquivos(a, r.handle)); }, (sobre) => document.body.classList.toggle('arrastando', sobre));
+}
 if (location.hash === '#exemplo') $('bExemplo').click();
 ultimoProjeto().then((p) => {
   if (!p || M || location.hash === '#exemplo') return;
