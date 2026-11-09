@@ -395,7 +395,7 @@ function aplicarAjustes() {
   for (const a of anims) {
     if (!temAjuste(a.camadas)) continue;
     const ac = M.mixer.existingAction(a.clip);
-    if (!ac || !ac.enabled) continue;
+    if (!ac || !ac.enabled || !ac.isScheduled()) continue;   // parada (stop) continua "enabled" no three
     const w = ac.getEffectiveWeight();
     if (w <= 0.0001) continue;
     const f = ac.time * a.fps;
@@ -756,7 +756,7 @@ $('camposAnim').append(campoDur.el, campoFps.el);
 $('camposAnim').style.gridTemplateColumns = '1fr 1fr';
 campoDur.el.style.gridColumn = campoFps.el.style.gridColumn = 'auto';
 
-function retimeAnim(a: Animacao, g: (t: number) => number, novaDur: number) {
+function retimeAnim(a: Animacao, g: (t: number) => number, novaDur: number, quebras: number[] = []) {
   guardarDesfazer();
   const gf = (f: number) => g(f / a.fps) * a.fps;
   for (const c of a.camadas) if (c.tipo === 'ajuste') remapearChaves(c.ajustes, gf);
@@ -765,7 +765,7 @@ function retimeAnim(a: Animacao, g: (t: number) => number, novaDur: number) {
     const vistos = new Set<number>();
     a.poses = a.poses.map((p) => ({ ...p, f: Math.round(gf(p.f)) })).filter((p) => (vistos.has(p.f) ? false : (vistos.add(p.f), true)));
     clip = gerarClipePoses(a.nome, novaDur, a.fps, a.poses);
-  } else clip = retimeClip(a.clip, g, novaDur);
+  } else clip = retimeClip(a.clip, g, novaDur, quebras);
   a.origem = undefined;
   trocarClipe(a, clip);
   mudou();
@@ -1648,24 +1648,27 @@ function espelharAjuste(meioCiclo: boolean) {
     const src = cam.ajustes[o];
     const mr = mapaRot(M.rw.get(o)!, M.rw.get(t)!), mv = mapaVet(M.rwPai.get(o)!, M.rwPai.get(t)!);
     const novo: AjusteOsso = {};
-    const desloca = <K extends ChaveRot | ChavePos>(L: K[], val: (f: number) => K): K[] => {
+    const desloca = <K extends ChaveRot | ChavePos>(L: K[], val: (f: number) => K, iInterp: number): K[] => {
       if (!meioCiclo) return L;
       const r = new Map<number, K>();
       for (const k of L) { if (k[0] >= n && L.some((x) => x[0] === 0)) continue; const f = (k[0] + h) % n; const c = k.slice() as K; c[0] = f; r.set(f, c); }
-      const ini = val(0);
-      r.set(0, ini);
-      const fim = ini.slice() as K; fim[0] = n; r.set(n, fim);
+      // o trecho da origem que atravessa o fim do loop: uma chave por quadro (linear), pra seguir a curva da origem
+      const s = n - h;
+      const ka = [...L].reverse().find((k) => k[0] < s), kb = L.find((k) => k[0] > s);
+      const dens = new Set<number>([0, n]);
+      if (ka && kb) { for (let t = ka[0] + h; t <= n; t++) dens.add(t); for (let t = 0; t <= kb[0] + h - n; t++) dens.add(t); }
+      for (const t of dens) { const c = val(t); if (ka && kb) (c as number[])[iInterp] = 1; r.set(t, c); }
       return [...r.values()].sort((a, b) => a[0] - b[0]);
     };
     if (src.rot) {
       const conv = (q: THREE.Quaternion, f: number, i?: number) => qArr(f, mr(q), i);
       const base = src.rot.map((k) => conv(new THREE.Quaternion(k[1], k[2], k[3], k[4]), k[0], k[5]));
-      novo.rot = desloca(base, (f) => conv(evalRot(src.rot, ((f - h) % n + n) % n), f));
+      novo.rot = desloca(base, (f) => conv(evalRot(src.rot, ((f - h) % n + n) % n), f), 5);
     }
     if (src.pos) {
       const conv = (p: THREE.Vector3, f: number, i?: number) => pArr(f, mv(p), i);
       const base = src.pos.map((k) => conv(new THREE.Vector3(k[1], k[2], k[3]), k[0], k[4]));
-      novo.pos = desloca(base, (f) => conv(evalPos(src.pos, ((f - h) % n + n) % n), f));
+      novo.pos = desloca(base, (f) => conv(evalPos(src.pos, ((f - h) % n + n) % n), f), 4);
     }
     cam.ajustes[t] = novo;
     feitos++;
@@ -1689,12 +1692,15 @@ function grudarPe() {
   const lado = slot?.split('.')[1];
   const ehBraco = !!slot && ['mao', 'antebraco', 'braco'].includes(slot.split('.')[0]);
   const c = lado ? cadeiaDe(`${ehBraco ? 'mao' : 'pe'}.${lado}` as Slot) : null;
-  if (!c) { status('Escolha um pé (ou uma mão) com a perna/braço no mapa do corpo.', 'erro'); return null; }
+  // rig de IK (o pé não é filho da perna, mas tem posição própria): prende pela posição do próprio osso
+  const solto = !c && !!ossoSel && temPosicao(ossoSel) ? ossoSel : null;
+  if (!c && !solto) { status('Escolha um pé (ou uma mão) com a perna/braço no mapa do corpo.', 'erro'); return null; }
+  const ponta = c ? c[2] : solto!;
   const n = quadros(), f0 = quadroAtual(), fps = atual.fps;
   const B = M.bones;
   const v = velEsteira(), frente = frenteDoModelo();
   const pos: THREE.Vector3[] = [];
-  for (let f = 0; f <= n; f++) { avaliarEm(f); pos.push(B[c[2]].getWorldPosition(_v())); }
+  for (let f = 0; f <= n; f++) { avaliarEm(f); pos.push(B[ponta].getWorldPosition(_v())); }
   let a: number, b: number;
   if (linha.temLoop() && f0 >= linha.loopA! && f0 <= linha.loopB!) { a = linha.loopA!; b = linha.loopB!; }
   else {
@@ -1722,15 +1728,22 @@ function grudarPe() {
   const esc: Escopo = { tipo: 'trecho', a, b, raio: r };
   const alvoEm = (f: number) => P0.clone().addScaledVector(frente, -v * (f - f0) / fps);
   const res: [number, Map<string, THREE.Quaternion>][] = [];
+  const resPos: [number, THREE.Vector3][] = [];
   for (let f = Math.max(0, a - r); f <= Math.min(n, b + r); f++) {
     const w = pesoEscopo(esc, f);
     avaliarEm(f);
     const alvo = pos[f].clone().lerp(alvoEm(f), w);
-    if (w > 0) resolverIK(B[c[0]], B[c[1]], B[c[2]], alvo, poleReserva(c));
-    res.push([f, new Map(c.map((o) => [o, B[o].quaternion.clone()]))]);
+    if (c) {
+      if (w > 0) resolverIK(B[c[0]], B[c[1]], B[c[2]], alvo, poleReserva(c));
+      res.push([f, new Map(c.map((o) => [o, B[o].quaternion.clone()]))]);
+    } else resPos.push([f, B[ponta].parent!.worldToLocal(alvo.clone())]);
   }
   const ctx = ctxDe(atual);
-  for (const o of c) {
+  if (!c) {
+    const L: ChavePos[] = resPos.map(([f, p]) => pArr(f, resolverCamada(atual!.camadas, idx, ctx, ponta, f).pos(valorOriginal(atual!.clip, ponta, f / fps, M!.repouso.get(ponta)).p, p), 1));
+    cam.ajustes[ponta] = { pos: L };
+  }
+  for (const o of c || []) {
     const L: ChaveRot[] = [];
     for (const [f, m] of res) {
       const orig = valorOriginal(atual.clip, o, f / fps, M.repouso.get(o));
@@ -1740,7 +1753,7 @@ function grudarPe() {
   }
   cam.ligada = true;
   let erro = 0;
-  for (let f = a; f <= b; f++) { avaliarEm(f); erro = Math.max(erro, B[c[2]].getWorldPosition(_v()).distanceTo(alvoEm(f))); }
+  for (let f = a; f <= b; f++) { avaliarEm(f); erro = Math.max(erro, B[ponta].getWorldPosition(_v()).distanceTo(alvoEm(f))); }
   avaliarEm(f0);
   mudou();
   ($('secCamadas') as HTMLDetailsElement).open = true;
@@ -1820,7 +1833,7 @@ async function esticarTrecho(fator?: number) {
   if (Math.abs(fator - 1) < 1e-3) return;
   const fps = atual.fps;
   const g = remapaTrecho(a / fps, b / fps, fator);
-  retimeAnim(atual, g, g(atual.clip.duration));
+  retimeAnim(atual, g, g(atual.clip.duration), [a / fps, b / fps]);
   linha.definirLoop(a, Math.round(a + (b - a) * fator));
   status(`Trecho ${a}–${b} agora vai de ${a} a ${linha.loopB} (${Math.round(fator * 100)}%).`, 'ok');
 }
@@ -1883,6 +1896,7 @@ function colarPose() {
 $('bCopiar').onclick = copiarPose;
 $('bColar').onclick = colarPose;
 function miniatura(): string {
+  if (!canvas.width || !canvas.height) return '';     // tela escondida: guarda sem miniatura
   const vis = [juntas.visible, tcHelper.visible, rastroLinha.visible, rastroPontos.visible];
   juntas.visible = tcHelper.visible = rastroLinha.visible = rastroPontos.visible = false;
   renderer.render(scene, camera);
@@ -1923,7 +1937,7 @@ function montarBiblioteca() {
     const d = document.createElement('div');
     d.className = 'pose-card';
     d.title = `Aplicar "${p.nome}" neste quadro (vale o "Vale para")`;
-    d.innerHTML = `<img src="${p.img}" alt=""><div class="n">${esc(p.nome)}</div><button class="x" title="Tirar da biblioteca">${ICONES.lixo}</button>`;
+    d.innerHTML = `${p.img ? `<img src="${p.img}" alt="">` : '<div class="sem-img"></div>'}<div class="n">${esc(p.nome)}</div><button class="x" title="Tirar da biblioteca">${ICONES.lixo}</button>`;
     d.onclick = () => usarPoseGuardada(p);
     d.querySelector('.x')!.addEventListener('click', async (e) => {
       e.stopPropagation();
@@ -2522,6 +2536,7 @@ Object.assign(window, {
     comecarEdicao, escreverEdicao, terminarEdicao,
     espelharPose, espelharAjuste, grudarPe, emendarLoop, esticarTrecho, poseAPose, exagerar, guardarPose, usarPoseGuardada,
     colocarAcessorio: (encaixe: string, nome: string, bytes: ArrayBuffer) => { const e = M?.encaixes.find((x) => x.nome === encaixe); return e ? colocarAcessorio(e, { nome, bytes }) : null; },
+    desenhar: () => umQuadro(0),
     mudarDuracao, mudarFps, apagarChave, aplicarConfig, abrirConfig, abrirPainelChaves,
     camposRot, camposPos, painel, linha, cfg,
     estado: () => ({ M, anims, lixeira, mapa, mapaAuto, atual, acaoAtual, tc, alvoIK, ossoSel, edicao, sujo, quadroAtual: quadroAtual(), quadros: quadros(),

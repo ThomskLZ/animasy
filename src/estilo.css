@@ -236,6 +236,7 @@ label.check { display: flex; align-items: center; gap: 6px; margin: 6px 0; curso
 .pose-card { position: relative; border: 1px solid var(--borda); border-radius: var(--raio); background: var(--panel2); cursor: pointer; overflow: hidden; }
 .pose-card:hover { border-color: var(--acc); }
 .pose-card img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: var(--cena); }
+.pose-card .sem-img { width: 100%; aspect-ratio: 1; background: var(--cena); }
 .pose-card .n { font-size: 11px; padding: 2px 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pose-card .x { position: absolute; right: 2px; top: 2px; background: var(--panel); border: 0; color: var(--mut); border-radius: 4px; cursor: pointer; display: none; padding: 2px; }
 .pose-card:hover .x { display: grid; }
