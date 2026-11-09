@@ -5,6 +5,8 @@
 Abra um personagem riggado (glb, gltf, vrm ou fbx), veja cada animação com calma e corrija poses por cima,
 sem estragar o original. Salva um `.glb` que serve em qualquer engine. Não precisa de Blender nem de servidor.
 
+![Licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-yellow) ![Sem servidor](https://img.shields.io/badge/sem-servidor-brightgreen) ![three.js](https://img.shields.io/badge/three.js-0.170-blue) ![Feito em TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6)
+
 ![Ver](docs/ver.png)
 
 > **English summary:** Animasy is a free, static web app (MIT) to view and fix animations of any rigged 3D character
@@ -140,3 +142,8 @@ automáticos (abrir, ajustar, mover junta, espelhar, exportar e conferir).
   mas não na posição das mãos.
 - Tema baseado na paleta [Gruvbox](https://github.com/morhetz/gruvbox) (MIT).
 - Feito com [three.js](https://threejs.org) (MIT) e [Vite](https://vitejs.dev) (MIT).
+
+## Contribuindo
+
+Sugestões e bugs são bem-vindos nas *issues*. Pra mexer no código: `npm install`, `npm run dev` (versão de desenvolvimento),
+`npm test` e `npm run build`. Mexeu no núcleo (`src/nucleo/`)? Rode os testes: ele não depende de interface.
