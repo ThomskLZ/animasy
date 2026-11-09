@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
   <rect width="1024" height="1024" rx="230" fill="#fabd2f"/>
-  <!-- boneco de articulação -->
+  <g transform="translate(50 -34)">
   <g stroke="#1d2021" stroke-width="46" stroke-linecap="round" stroke-linejoin="round" fill="none">
     <path d="M400 340 V590"/>
     <path d="M250 520 L400 395 L570 520 L720 330"/>
@@ -24,4 +24,5 @@
   <circle cx="570" cy="520" r="50" fill="#fe8019" stroke="#1d2021" stroke-width="14"/>
   <!-- cursor do mouse clicando -->
   <path d="M600 560 V735 L650 690 L690 775 L735 755 L695 670 L765 665 Z" fill="#fbf1c7" stroke="#1d2021" stroke-width="18" stroke-linejoin="round"/>
+</g>
 </svg>
