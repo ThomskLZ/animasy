@@ -31,7 +31,7 @@ import { Arvore } from './interface/arvore';
 import { CampoNumero } from './interface/campoNumero';
 import { aplicarTema, cor, lerConfig, NomeTema, salvarConfig, TEMAS } from './interface/tema';
 import roboUrl from './exemplos/robo.glb?url';
-import { noPrograma, ouvirArrasto } from './arquivos/nativo';
+import { handleDoArrasto } from './arquivos/nativo';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const fmt = (v: number, d = 2) => v.toFixed(d).replace('.', ',');
@@ -2496,8 +2496,8 @@ addEventListener('drop', async (e) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const promHandles = itens.map((i) => ((i as any).getAsFileSystemHandle ? (i as any).getAsFileSystemHandle() : Promise.resolve(null)) as Promise<FileSystemHandle | null>);
   const arquivos = [...dt.files];
-  let handle: FileSystemFileHandle | undefined;
-  try {
+  let handle: FileSystemFileHandle | undefined = handleDoArrasto(arquivos);   // no programa: caminho do arquivo
+  if (!handle) try {
     const hs = await Promise.all(promHandles);
     handle = hs.find((h) => h && h.kind === 'file' && ehModelo(h.name)) as FileSystemFileHandle | undefined;
   } catch { handle = undefined; }
@@ -2510,9 +2510,6 @@ addEventListener('drop', async (e) => {
   }
   if (arquivos.length) abrirArquivos(await lerArquivos(arquivos), handle);
 });
-if (noPrograma()) {      // no programa o arrasto vem do Windows (com o caminho, pra salvar por cima depois)
-  ouvirArrasto((r) => { if (r.arquivos.length) lerArquivos(r.arquivos).then((a) => abrirArquivos(a, r.handle)); }, (sobre) => document.body.classList.toggle('arrastando', sobre));
-}
 if (location.hash === '#exemplo') $('bExemplo').click();
 ultimoProjeto().then((p) => {
   if (!p || M || location.hash === '#exemplo') return;

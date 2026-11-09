@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/logo.svg" width="128" alt="Logo do Animasy"></p>
+
 # Animasy
 
 **Ver e ajustar animações de personagens 3D, no seu PC.** Fácil, mas sem teto.
@@ -5,37 +7,41 @@
 Abra um personagem riggado (glb, gltf, vrm ou fbx), veja cada animação com calma e corrija poses por cima,
 sem estragar o original. Salva um `.glb` que serve em qualquer engine. Não precisa de Blender nem de servidor.
 
-![Licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-yellow) ![Tauri 2](https://img.shields.io/badge/Tauri-2-24c8db) ![three.js](https://img.shields.io/badge/three.js-0.170-blue) ![Feito em TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6)
+![Licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-yellow) ![Electron](https://img.shields.io/badge/Electron-33-47848f) ![three.js](https://img.shields.io/badge/three.js-0.170-blue) ![Feito em TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6)
 
 ![Ver](docs/ver.png)
 
-> **English summary:** Animasy is a free desktop app (Tauri, MIT) to view and fix animations of any rigged 3D character
+> **English summary:** Animasy is a free desktop app (Electron, MIT; Windows, Linux, macOS) to view and fix animations of any rigged 3D character
 > (glb, gltf, vrm, fbx) on your PC. Non-destructive adjustment layers, scope "frame / range / whole clip", move-joint
 > IK, mirror, foot lock, loop seam, pose-to-pose, pose library, accessories on sockets, one-at-a-time retarget with
 > preview, and a verified `.glb` export (re-read and compared frame by frame before writing). No server, no Blender.
-> Download the installer or `animasy.exe` from Releases, or build with `npm run tauri:build`. UI and docs are in Portuguese (pt-BR).
+> Download the installer or `animasy.exe` from Releases, or build with `npm run dist`. UI and docs are in Portuguese (pt-BR).
 
 ## Baixar
 
 Na página de [Releases](../../releases) do projeto:
 
-- **`Animasy_x.y.z_x64-setup.exe`**: instalador do Windows (não pede administrador).
-- **`animasy.exe`**: o programa solto, sem instalar (precisa do WebView2, que já vem no Windows 11).
+- **`Animasy-Setup-x.y.z.exe`**: instalador do Windows (você escolhe a pasta; não pede administrador).
+- **`Animasy-Portatil-x.y.z.exe`**: o programa solto, sem instalar.
+- **`Animasy-x.y.z.AppImage`** (Linux) e **`.dmg`** (macOS): gerados pelas mesmas configurações; ainda não foram testados.
 
-É um programa de PC com janela própria: abre e salva arquivos pelas janelas do Windows, aceita arrastar o modelo
-pra dentro e lembra o tamanho e a posição da janela.
+É um programa de PC com janela própria: abre e salva arquivos pelas janelas do sistema, aceita arrastar o modelo pra
+dentro e lembra o tamanho e a posição da janela. Usa Electron (o Chromium vai junto), então o 3D é igual em
+Windows, Linux e macOS.
 
-## Como gerar (`npm run tauri:build`)
+## Como gerar (`npm run dist`)
 
-Precisa de [Node.js](https://nodejs.org) e de [Rust](https://rustup.rs) (com as Build Tools do Visual Studio no Windows).
+Precisa só de [Node.js](https://nodejs.org).
 
 ```
 npm install
-npm run tauri:build
+npm run dist          # Windows: instalador + portátil em release/
+npm run dist:linux    # AppImage (rode no Linux)
+npm run dist:mac      # dmg (rode num Mac)
 ```
 
-Saem em `src-tauri/target/release/`: o `animasy.exe` e, em `bundle/nsis/`, o instalador. Pra mexer no código com
-recarga ao vivo: `npm run tauri:dev`.
+Pra rodar sem empacotar: `npm run app`. Pra mexer no código com recarga ao vivo, `npm run dev` num terminal e, noutro,
+`ANIMASY_DEV_URL=http://localhost:5173 npm run app:dev`.
 
 ## Só no navegador (opcional)
 
