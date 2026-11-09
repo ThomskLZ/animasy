@@ -1711,7 +1711,8 @@ function grudarPe() {
       d.y = 0;
       return d.length();
     };
-    const contato = (f: number) => pos[f].y < ymin + ALTURA * 0.04 && vel(f) < ALTURA * 0.6;
+    const ymax = Math.max(...pos.map((p) => p.y));
+    const contato = (f: number) => pos[f].y < ymin + Math.min(ALTURA * 0.025, (ymax - ymin) * 0.2) && vel(f) < ALTURA * 0.6;
     if (!contato(f0)) { avaliarEm(f0); status('Neste quadro o pé não está no chão. Vá pra uma pisada ou marque o trecho na régua.', 'erro'); return null; }
     a = f0; b = f0;
     while (a > 0 && contato(a - 1)) a--;
@@ -1757,7 +1758,8 @@ function grudarPe() {
   avaliarEm(f0);
   mudou();
   ($('secCamadas') as HTMLDetailsElement).open = true;
-  status(`${ehBraco ? 'Mão presa' : 'Pé preso'} do quadro ${a} ao ${b} (camada nova). Erro máximo: ${fmt(erro / ALTURA * 100, 2)}% da altura.`, 'ok', 4500);
+  const longe = erro > ALTURA * 0.005;
+  status(`${ehBraco ? 'Mão presa' : 'Pé preso'} do quadro ${a} ao ${b} (camada nova).` + (longe ? ` Em alguns quadros a ${ehBraco ? 'mão' : 'perna'} não alcança (fica esticada): sobra ${fmt(erro / ALTURA * 100, 1)}% da altura.` : ''), longe ? '' : 'ok', 5000);
   return { a, b, erro };
 }
 $('bPe').onclick = () => grudarPe();
