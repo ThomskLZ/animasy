@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Animasy</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23f3b94d'/%3E%3Cpath d='M9 24l7-16 7 16M12 18h8' stroke='%231b2030' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23fabd2f'/%3E%3Cpath d='M9 24l7-16 7 16M12 18h8' stroke='%231d2021' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 </head>
 <body>
 <aside id="esq">
@@ -16,6 +16,7 @@
         <button class="ico" id="bSalvar" title="Salvar .glb (Ctrl+S)" data-ico="salvar" disabled></button>
         <button class="ico mini" id="bSalvarMenu" title="Mais opções de salvar" data-ico="seta" disabled></button>
       </div>
+      <button class="ico" id="bConfig" title="Configurações" data-ico="config"></button>
     </div>
   </header>
   <div id="menuSalvar" class="menu" hidden>
@@ -39,54 +40,70 @@
 </aside>
 
 <main id="palco">
-  <canvas id="tela" tabindex="0"></canvas>
-  <div id="titulo"></div>
-  <div id="info"></div>
-  <div id="etiqueta"></div>
-  <div id="ferr3d">
-    <button data-z="1" title="Aproximar (roda do mouse)">+</button>
-    <button data-z="-1" title="Afastar (roda do mouse)">−</button>
-    <button id="bReset" title="Enquadrar (clique duplo no fundo)">⟲</button>
-    <hr>
-    <button id="tJuntas" class="on" title="Bolinhas das juntas (J)">●</button>
-    <button id="tRastro" class="on" title="Rastro do movimento (T)">〰</button>
-    <button id="tOssos" title="Esqueleto">⌇</button>
-    <button id="tLimpo" title="Esconder todas as ajudas (H)">◐</button>
-    <button id="tAjuda" title="Atalhos">?</button>
-  </div>
-  <div id="atalhos" class="flutua" hidden>
-    <b>Câmera</b>: arrastar gira · botão direito / Shift+arrastar move · roda zoom<br>
-    <kbd>espaço</kbd> tocar · <kbd>←</kbd><kbd>→</kbd> quadro · <kbd>↑</kbd><kbd>↓</kbd> animação<br>
-    <kbd>R</kbd> girar · <kbd>G</kbd> mover · <kbd>Esc</kbd> desseleciona · <kbd>Delete</kbd> tira a chave<br>
-    <kbd>Ctrl+Z</kbd>/<kbd>Ctrl+Y</kbd> desfazer/refazer · <kbd>Ctrl+C</kbd>/<kbd>Ctrl+V</kbd> copiar/colar pose<br>
-    <kbd>Ctrl+O</kbd> abrir · <kbd>Ctrl+S</kbd> salvar · <kbd>F2</kbd> renomear<br>
-    <kbd>H</kbd> esconde ajudas · <kbd>J</kbd> bolinhas · <kbd>T</kbd> rastro<br>
-    <b>Linha do tempo</b>: arrastar na régua (faixa de cima) marca um trecho em loop · clique duplo na régua tira ·
-    arrastar um losango move a chave no tempo<br>
-    <b>Ajustes</b> ficam por cima da animação original até salvar. Excluir manda pra lixeira.
-  </div>
-  <div id="folha" title="Clique pra fechar"><img alt="Folha de quadros"></div>
-  <div id="vazio">
-    <div class="caixa">
-      <div class="alvo" data-ico="soltar"></div>
-      <div class="grande">Arraste um modelo aqui</div>
-      <div class="formatos">glb · gltf · vrm · fbx</div>
-      <div class="botoes">
-        <button class="btn acc" id="bAbrir2">Abrir arquivo</button>
-        <button class="btn" id="bExemplo" title="Robô CC0 do Quaternius">Ver exemplo</button>
-      </div>
-      <button class="btn" id="bContinuar" hidden></button>
+  <div id="cena">
+    <canvas id="tela" tabindex="0"></canvas>
+    <div id="titulo"></div>
+    <div id="info"></div>
+    <div id="etiqueta"></div>
+    <div id="faixaEncaixe" class="faixa" hidden></div>
+    <div id="ferr3d">
+      <button data-z="1" title="Aproximar (roda do mouse)">+</button>
+      <button data-z="-1" title="Afastar (roda do mouse)">−</button>
+      <button id="bReset" title="Enquadrar (clique duplo no fundo)">⟲</button>
+      <hr>
+      <button id="tJuntas" class="on" title="Bolinhas das juntas (J)">●</button>
+      <button id="tRastro" class="on" title="Rastro do movimento (T)">〰</button>
+      <button id="tFantasmas" title="Fantasmas: quadros vizinhos transparentes, com a animação parada (O)" data-ico="fantasma"></button>
+      <button id="tOssos" title="Esqueleto">⌇</button>
+      <button id="tLimpo" title="Esconder todas as ajudas (H)">◐</button>
+      <button id="tAjuda" title="Atalhos e dicas">?</button>
     </div>
+    <div id="atalhos" class="flutua" hidden>
+      <b>Câmera</b>: arrastar gira · botão direito / Shift+arrastar move · roda zoom<br>
+      <kbd>espaço</kbd> tocar · <kbd>←</kbd><kbd>→</kbd> quadro · <kbd>[</kbd><kbd>]</kbd> chave anterior/próxima · <kbd>↑</kbd><kbd>↓</kbd> animação<br>
+      <kbd>R</kbd> girar · <kbd>G</kbd> mover · <kbd>Esc</kbd> desseleciona · <kbd>Delete</kbd> tira a chave (ou a pose)<br>
+      <kbd>Ctrl+Z</kbd>/<kbd>Ctrl+Y</kbd> desfazer/refazer · <kbd>Ctrl+C</kbd>/<kbd>Ctrl+V</kbd> copiar/colar pose · <kbd>M</kbd> espelhar pose<br>
+      <kbd>Ctrl+O</kbd> abrir · <kbd>Ctrl+S</kbd> salvar · <kbd>F2</kbd> renomear · <kbd>K</kbd> painel de chaves<br>
+      <kbd>H</kbd> esconde ajudas · <kbd>J</kbd> bolinhas · <kbd>T</kbd> rastro · <kbd>O</kbd> fantasmas<br>
+      <b>Mover</b> leva a bolinha pro lugar novo: mão/pé puxam o braço/perna; cotovelo/joelho giram em volta da linha
+      ombro→mão; quadril move o corpo; barriga/peito/pescoço curvam a coluna; o resto gira o osso de cima.<br>
+      <b>Vale para</b>: <i>Quadro ±N</i> entra e sai suave em volta do quadro · <i>Trecho</i> vale no trecho marcado na
+      régua (arraste na faixa de cima da linha do tempo) · <i>Inteira</i> vale na animação toda, de uma vez.<br>
+      <b>Camadas</b>: cada uma com peso; desligue pra comparar. <b>Exagerar</b> aumenta ou diminui o movimento em volta
+      da pose média. <b>Pose a pose</b> cria uma cópia só com as poses-chave: editou uma, o resto acompanha.<br>
+      Campos de número: arraste no nome (Shift = fino) ou digite. Excluir manda pra lixeira; nada some sem perguntar.
+    </div>
+    <div id="folha" title="Clique pra fechar"><img alt="Folha de quadros"></div>
+    <div id="vazio">
+      <div class="caixa">
+        <div class="alvo" data-ico="soltar"></div>
+        <div class="grande">Arraste um modelo aqui</div>
+        <div class="formatos">glb · gltf · vrm · fbx</div>
+        <div class="botoes">
+          <button class="btn acc" id="bAbrir2">Abrir arquivo</button>
+          <button class="btn" id="bExemplo" title="Robô CC0 do Quaternius">Ver exemplo</button>
+        </div>
+        <button class="btn" id="bContinuar" hidden></button>
+      </div>
+    </div>
+    <div id="soltar"><div>Solte pra abrir</div></div>
+    <div id="aviso"></div>
   </div>
-  <div id="soltar"><div>Solte pra abrir</div></div>
-  <div id="aviso"></div>
+  <div id="painelChaves" hidden>
+    <div class="cab">
+      <div class="seg pequeno"><button id="pcDope" class="on" title="Uma linha por osso">Chaves</button><button id="pcCurvas" class="avancado" title="Curvas de rotação do osso selecionado (graus)">Curvas</button></div>
+      <span id="pcInfo"></span>
+    </div>
+    <canvas id="chavesCanvas"></canvas>
+  </div>
   <div id="barra">
     <button id="bAnt" title="Quadro anterior (←)">◀</button>
     <button id="bPlay" title="Tocar/pausar (espaço)">❚❚</button>
     <button id="bProx" title="Próximo quadro (→)">▶</button>
     <canvas id="linha"></canvas>
-    <button id="bLoopX" title="Tirar o trecho em loop">✕ loop</button>
+    <button id="bLoopX" title="Tirar o trecho marcado">✕ trecho</button>
     <span id="rotulo"></span>
+    <button id="bChaves" class="ico" title="Painel de chaves (K)" data-ico="chaves"></button>
   </div>
 </main>
 
@@ -99,37 +116,97 @@
   <div class="aba" id="painelVer">
     <h2>Reprodução</h2>
     <label class="linha">Velocidade <input id="vel" type="range" min="0.05" max="2" step="0.05" value="1"><span class="val" id="velV">1,00x</span></label>
-    <label class="linha" title="Tempo de mistura ao trocar de animação">Transição (s) <input id="fade" type="range" min="0" max="0.6" step="0.01" value="0.15"><span class="val" id="fadeV">0,15</span></label>
+    <label class="linha" title="Tempo de mistura ao trocar de animação">Transição <input id="fade" type="range" min="0" max="0.6" step="0.01" value="0.15"><span class="val" id="fadeV">0,15 s</span></label>
     <label class="check"><input id="loop" type="checkbox" checked> Repetir</label>
+    <h2>Animação</h2>
+    <div class="campos" id="camposAnim"></div>
     <h2>Mostrar</h2>
     <label class="check" title="Chão andando embaixo do personagem, pra ver pé deslizando"><input id="cEsteira" type="checkbox"> Esteira</label>
-    <label class="linha" title="Velocidade da esteira">Esteira (m/s) <input id="esteiraV" type="number" step="0.05" value="0"></label>
+    <label class="linha" title="Velocidade da esteira (também vale pro pé no chão)">Esteira (m/s) <input id="esteiraV" type="number" step="0.05" value="0"></label>
     <label class="check"><input id="cToon" type="checkbox"> Sombreado toon</label>
-    <label class="check"><input id="cFundo" type="checkbox"> Fundo claro</label>
     <h2>Câmera</h2>
     <div class="g3">
       <button class="btn" data-cam="frente">Frente</button><button class="btn" data-cam="lado">Lado</button><button class="btn" data-cam="tres">3/4</button>
       <button class="btn" data-cam="costas">Costas</button><button class="btn" data-cam="cima">Cima</button><button class="btn" data-cam="perto">Perto</button>
     </div>
     <button id="bFolha" class="btn larga" title="12 quadros da animação numa imagem só">Folha de quadros</button>
+    <h2>Acessórios</h2>
+    <div id="acessorios"></div>
   </div>
 
   <div class="aba" id="painelAjustar" hidden>
-    <div id="ossoNome">—</div>
-    <div class="corpo" id="corpo"></div>
+    <div class="osso-cab">
+      <div id="ossoNome">—</div>
+      <div id="ossoSub"></div>
+    </div>
+    <div id="silhueta"></div>
     <div class="outro">
-      <select id="selOsso" title="Qualquer osso do esqueleto"></select>
+      <input id="buscaOsso" placeholder="Buscar osso" aria-label="Buscar osso">
       <button class="ico" id="bMapa" title="Mapa do corpo: qual osso é cada parte" data-ico="mapa"></button>
     </div>
+    <details id="arvoreBox"><summary>Todos os ossos <span id="nOssos"></span></summary><div id="arvore"></div></details>
+
     <h2>Ferramenta</h2>
-    <div class="g2">
-      <button class="btn on" id="fGirar" title="Girar o osso (R)">Girar <small>R</small></button>
-      <button class="btn" id="fMover" title="Mover: mão/pé levam o braço/perna junto; quadril move o corpo (G)">Mover <small>G</small></button>
+    <div class="seg">
+      <button id="fGirar" class="on" title="Girar o osso (R)">Girar <small>R</small></button>
+      <button id="fMover" title="Mover a junta pro lugar novo (G)">Mover <small>G</small></button>
     </div>
-    <div class="g2">
-      <label class="opc" title="O ajuste entra e sai suave em volta do quadro atual (quadros pra cada lado)"><input type="radio" name="alc" value="momento" checked> Momento ±<input id="raio" type="number" value="6" min="1" max="240"></label>
-      <label class="opc" title="O ajuste vale igual do começo ao fim"><input type="radio" name="alc" value="tudo"> Inteira</label>
+    <div class="ferr-extra avancado">
+      <button class="chip" id="bEspaco" title="Eixos do gizmo: do osso (local) ou do mundo"><span data-ico="globo"></span><span id="bEspacoT">Local</span></button>
+      <button class="chip" id="bSnap" title="Passo do encaixe (Configurações): o gizmo anda de tanto em tanto"><span data-ico="ima"></span><span id="bSnapT">Livre</span></button>
     </div>
+
+    <h2>Vale para</h2>
+    <div class="seg" id="escopo">
+      <button data-e="momento" class="on" title="O ajuste entra e sai suave em volta deste quadro">Quadro <span class="raio">±<input id="raio" type="number" value="6" min="1" max="240" title="Quadros pra cada lado"></span></button>
+      <button data-e="trecho" title="Vale no trecho marcado na régua (arraste na faixa de cima da linha do tempo), com entrada e saída suaves">Trecho</button>
+      <button data-e="tudo" title="Vale na animação inteira, de uma vez (ex.: braço mais aberto no andar todo)">Inteira</button>
+    </div>
+
+    <details class="secao" id="secValores" open>
+      <summary>Valores</summary>
+      <div class="campos" id="camposRot"></div>
+      <div class="campos" id="camposPos"></div>
+      <label class="linha" title="Como a curva vai desta chave até a próxima">Interpolação
+        <select id="selInterp"><option value="0">Suave</option><option value="1">Linear</option><option value="2">Constante</option><option value="3">Ease in</option><option value="4">Ease out</option></select>
+      </label>
+    </details>
+
+    <details class="secao" id="secCamadas">
+      <summary>Camadas <span id="nCamadas"></span></summary>
+      <div id="camadas"></div>
+      <button class="btn larga" id="bNovaCamada">+ Camada</button>
+    </details>
+
+    <details class="secao" id="secMov">
+      <summary>Movimento</summary>
+      <div class="sub">Exagerar / suavizar</div>
+      <div class="seg pequeno" id="exAlvo"><button data-a="osso" class="on" title="Só o osso selecionado">Osso</button><button data-a="corpo" title="O corpo todo">Corpo todo</button></div>
+      <label class="linha" title="100% = como está; mais = movimento maior; menos = mais contido (em volta da pose média)">Quanto <input id="exFator" type="range" min="0" max="200" step="5" value="100"><span class="val" id="exFatorV">100%</span></label>
+      <div class="sub">Espelhar</div>
+      <div class="g2">
+        <button class="btn" id="bEspPose" title="A pose deste quadro, com esquerda e direita trocadas (M)">Pose espelhada</button>
+        <button class="btn" id="bEspAjuste" title="Copia o ajuste do osso selecionado pro osso do outro lado">Ajuste → outro lado</button>
+      </div>
+      <button class="btn larga" id="bEspCiclo" title="Pro andar/corrida: copia pro outro lado meio ciclo depois">Ajuste → outro lado, meio ciclo depois</button>
+      <div class="sub">Pés e loop</div>
+      <div class="g2">
+        <button class="btn" id="bPe" title="Prende o pé selecionado no chão: no trecho marcado ou na pisada em volta deste quadro (desconta a esteira)">Pé no chão</button>
+        <button class="btn" id="bLoopEmenda" title="Faz o último quadro emendar com o primeiro (sem pulo no loop)">Emendar loop</button>
+      </div>
+      <div class="sub">Tempo e poses</div>
+      <div class="g2">
+        <button class="btn" id="bEsticar" title="Estica ou encurta o trecho marcado na régua">Esticar trecho</button>
+        <button class="btn" id="bPoseAPose" title="Cria uma cópia só com as poses-chave: editou uma pose, o resto acompanha">Pose a pose…</button>
+      </div>
+    </details>
+
+    <details class="secao" id="secPoses">
+      <summary>Biblioteca de poses <span id="nPoses"></span></summary>
+      <div id="biblioteca"></div>
+      <button class="btn larga" id="bGuardarPose" title="Guarda a pose deste quadro no projeto">Guardar pose deste quadro</button>
+    </details>
+
     <h2>Editar</h2>
     <div class="g2">
       <button class="btn" id="bDesfazer" title="Ctrl+Z">↶ Desfazer</button>
@@ -137,7 +214,7 @@
       <button class="btn" id="bCopiar" title="Copia a pose inteira deste quadro (Ctrl+C)">Copiar pose</button>
       <button class="btn" id="bColar" title="Cola a pose copiada neste quadro (Ctrl+V). Bom pra fechar um loop: copie o quadro 0 e cole no último">Colar pose</button>
       <button class="btn" id="bApagarChave" title="Tira a chave do osso selecionado neste quadro (Delete)">Tirar chave</button>
-      <button class="btn" id="bZerarOsso" title="Tira todos os ajustes do osso selecionado nesta animação">Limpar osso</button>
+      <button class="btn" id="bZerarOsso" title="Tira todos os ajustes do osso selecionado na camada ativa">Limpar osso</button>
     </div>
     <label class="check" title="Mostra a animação sem os ajustes"><input id="cOriginal" type="checkbox"> Ver original</label>
     <button id="bDescartar" class="btn larga" title="Joga fora os ajustes desta animação que ainda não foram salvos">Descartar ajustes desta animação</button>

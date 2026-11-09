@@ -46,6 +46,8 @@ export function analisarNome(nomeOrig: string): { lado: Lado; base: string } {
   tenta(/right/i, 'R');
   tenta(/(?<=[_ .-])l$|^l(?=[_ .-])/, 'L');
   tenta(/(?<=[_ .-])r$|^r(?=[_ .-])/, 'R');
+  tenta(/(?<=[a-z0-9])L$/, 'L');     // camelCase: ShoulderL, Palm1L
+  tenta(/(?<=[a-z0-9])R$/, 'R');
   const base = n.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
   return { lado, base };
 }

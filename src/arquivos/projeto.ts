@@ -1,7 +1,9 @@
 // Projeto guardado no próprio navegador (IndexedDB): o modelo original, as animações criadas, os ajustes ainda
 // não salvos, a lixeira e o mapa do corpo. Fecha a aba e volta: está tudo lá. Nada vai pra internet.
 import type { AjustesClip } from '../nucleo/ajustes';
+import type { Camada } from '../nucleo/camadas';
 import type { MapaCorpo } from '../nucleo/mapaCorpo';
+import type { PoseChave } from '../nucleo/poses';
 import type { ArquivoEntrada } from './abrir';
 
 export interface AnimSalva {
@@ -9,9 +11,19 @@ export interface AnimSalva {
   nome: string;
   origem?: number;       // índice do clipe no arquivo original (sem mudança na curva)
   clipe?: unknown;       // AnimationClip.toJSON (criada/duplicada aqui)
-  ajustes: AjustesClip;
+  ajustes?: AjustesClip;  // projetos antigos (uma camada só)
+  camadas?: Camada[];
+  ativa?: number;
+  fps?: number;
+  poses?: PoseChave[];
   nova?: boolean;
   excluidaEm?: number;
+}
+
+export interface PoseGuardada { id: string; nome: string; img: string; ossos: Record<string, number[]> }
+export interface AcessorioSalvo {
+  id: string; encaixe: string; arquivo: string; bytes: ArrayBuffer;
+  pos: number[]; rot: number[]; escala: number; exportar: boolean; visivel: boolean;
 }
 
 export interface ProjetoSalvo {
@@ -25,6 +37,9 @@ export interface ProjetoSalvo {
   sujo: boolean;
   atual?: string;
   atualizado: number;
+  biblioteca?: PoseGuardada[];
+  acessorios?: AcessorioSalvo[];
+  encaixesVistos?: boolean;
 }
 
 export interface Backup { id?: number; chave: string; nome: string; bytes: ArrayBuffer; quando: number }
