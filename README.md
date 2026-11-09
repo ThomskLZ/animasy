@@ -1,6 +1,6 @@
 # Animasy
 
-**Ver e ajustar animações de personagens 3D, direto no navegador.** Fácil, mas sem teto.
+**Ver e ajustar animações de personagens 3D, no seu PC.** Fácil, mas sem teto.
 
 Abra um personagem riggado (glb, gltf, vrm ou fbx), veja cada animação com calma e corrija poses por cima,
 sem estragar o original. Salva um `.glb` que serve em qualquer engine. Não precisa de Blender nem de servidor.
