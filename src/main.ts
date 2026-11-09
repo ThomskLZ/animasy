@@ -406,6 +406,7 @@ function aplicarAjustes() {
       if (!b) continue;
       const d = deltaCamadas(a.camadas, ctx, nome, f);
       if (!d.tem) continue;
+      if (!Number.isFinite(d.q.x + d.q.y + d.q.z + d.q.w + d.p.x + d.p.y + d.p.z)) continue;   // conta inválida: ignora em vez de estragar a cena
       marcar(b);
       b.quaternion.multiply(w >= 0.9999 ? d.q : QI.clone().slerp(d.q, w));
       b.position.addScaledVector(d.p, w);
@@ -938,7 +939,9 @@ function calcularRastro() {
   rastroLinha.visible = rastroPontos.visible = rastroTem;
   if (!pega || !M || !acaoAtual) return;
   const n = quadros();
-  const a = linha.loopA !== null ? linha.loopA : 0, b = linha.loopB !== null ? linha.loopB : n;
+  // o trecho marcado pode ter ficado maior que a animação (esticar, duração, trocar de animação): limita
+  let a = linha.loopA !== null ? linha.loopA : 0, b = linha.loopB !== null ? linha.loopB : n;
+  a = Math.max(0, Math.min(n, Math.round(a))); b = Math.max(a, Math.min(n, Math.round(b)));
   const t0 = acaoAtual.time;
   const pts: THREE.Vector3[] = [], cores: number[] = [];
   const chaves = linhaChaves();
@@ -949,8 +952,11 @@ function calcularRastro() {
     const c = chaves.has(f) && !chaves.get(f) ? ca : cn;
     cores.push(c.r, c.g, c.b);
   }
-  rastroLinha.geometry.setFromPoints(pts);
-  rastroPontos.geometry.setFromPoints(pts);
+  if (!pts.length || pts.some((p) => !p || !Number.isFinite(p.x + p.y + p.z))) { rastroTem = false; rastroLinha.visible = rastroPontos.visible = false; return; }
+  // geometria nova a cada vez: setFromPoints num buffer que já existe quebra quando o rastro encolhe (causava o congelamento)
+  rastroLinha.geometry.dispose(); rastroPontos.geometry.dispose();
+  rastroLinha.geometry = new THREE.BufferGeometry().setFromPoints(pts);
+  rastroPontos.geometry = new THREE.BufferGeometry().setFromPoints(pts);
   rastroPontos.geometry.setAttribute('color', new THREE.Float32BufferAttribute(cores, 3));
   acaoAtual.time = t0;
   restaurarBase();
@@ -1120,7 +1126,7 @@ function prenderGizmo() {
     tc.setSpace('local');
     tc.attach(ajustandoAcessorio.grupo);
     ativo = true;
-  } else if (editando && !!ossoSel && !tocando && !ver.limpo && !!M) {
+  } else if (editando && !!ossoSel && !tocando && !ver.limpo && !!M && !!M.bones[ossoSel]) {   // osso que sumiu (troca de modelo/clipe): sem gizmo
     const rodar = ferramenta === 'girar';
     tc.setMode(rodar ? 'rotate' : 'translate');
     tc.setSpace(cfg.espaco === 'mundo' ? 'world' : (rodar ? 'local' : 'world'));
@@ -1302,6 +1308,9 @@ function comecarEdicao(tipos: Map<string, TipoEd[]>, escopoForcado?: Escopo, sem
   return true;
 }
 function escreverEdicao(valores: Map<string, { q?: THREE.Quaternion; p?: THREE.Vector3 }>) {
+  for (const v of valores.values()) {
+    if ((v.q && !Number.isFinite(v.q.x + v.q.y + v.q.z + v.q.w)) || (v.p && !Number.isFinite(v.p.x + v.p.y + v.p.z))) { status('Esse movimento deu um valor inválido; ignorei.'); return; }
+  }
   const e = edicao;
   if (!e || !M) return;
   const pose = e.poses ? e.a.poses!.find((p) => p.f === e.f) : undefined;
@@ -2627,7 +2636,42 @@ function umQuadro(dt: number) {
   renderizar();
   desenharPip();
 }
-renderer.setAnimationLoop(() => umQuadro(Math.min(relogio.getDelta(), 0.1)));
+// O three.js só agenda o próximo quadro DEPOIS do callback: uma exceção aqui matava o desenho (a tela congelava
+// enquanto os painéis, que são HTML, continuavam respondendo). Agora cada quadro é protegido.
+let errosSeguidos = 0, avisouErro = 0, contextoPerdido = false;
+function quadroProtegido() {
+  if (contextoPerdido) return;
+  try {
+    umQuadro(Math.min(relogio.getDelta(), 0.1));
+    errosSeguidos = 0;
+  } catch (e) {
+    errosSeguidos++;
+    // devolve o renderer e a cena ao estado normal (o erro pode ter vindo no meio dos fantasmas ou da prévia)
+    try {
+      renderer.autoClear = true; renderer.setScissorTest(false); scene.overrideMaterial = null;
+      renderer.setViewport(0, 0, canvas.clientWidth, canvas.clientHeight);
+      restaurarBase();
+    } catch { /* segue */ }
+    console.error('[Animasy] erro ao desenhar um quadro', e);
+    (window as unknown as { __erroAnimasy?: unknown }).__erroAnimasy = e;
+    if (performance.now() - avisouErro > 8000) {
+      avisouErro = performance.now();
+      status('Algo deu errado ao desenhar. Seu trabalho está guardado; os detalhes estão no console (F12).', 'erro', 5000);
+    }
+    if (errosSeguidos > 30) {      // erro que não passa: para de repetir a conta que falha e só mostra a cena
+      try { renderer.render(scene, camera); } catch { /* nada */ }
+    }
+  }
+}
+canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); contextoPerdido = true; status('A placa de vídeo soltou o desenho. Tentando voltar…', 'erro', 6000); });
+canvas.addEventListener('webglcontextrestored', () => {
+  contextoPerdido = false;
+  if (M) { for (const [, m0, t] of M.materiais) { for (const x of Array.isArray(m0) ? m0 : [m0]) x.needsUpdate = true; for (const x of Array.isArray(t) ? t : [t]) x.needsUpdate = true; } }
+  status('Desenho de volta.', 'ok');
+});
+addEventListener('error', (e) => { console.error('[Animasy] erro', e.error ?? e.message); });
+addEventListener('unhandledrejection', (e) => { console.error('[Animasy] promessa rejeitada', e.reason); });
+renderer.setAnimationLoop(quadroProtegido);
 coresDaCena();
 atualizarChips();
 atualizarAjudas();
