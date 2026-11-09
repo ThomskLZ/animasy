@@ -16,6 +16,7 @@ import { mapaRot, mapaVet, paresEspelho } from './nucleo/espelho';
 import { atualizarTrilhas, detectarPoses, gerarClipePoses, PoseChave } from './nucleo/poses';
 import { remapaTrecho, retimeClip } from './nucleo/tempo';
 import { acharEncaixes, Encaixe } from './nucleo/encaixes';
+import { LadoRetarget, retargetar } from './nucleo/retarget';
 import { ArquivoEntrada, carregarModelo, ehModelo, ModeloCarregado } from './arquivos/abrir';
 import { baixar, escolherParaAbrir, exportarGlb, gravarNoHandle, podeGravar, salvarComo, temAcessoArquivos } from './arquivos/salvar';
 import {
@@ -2176,6 +2177,111 @@ function montarAcessorios() {
   }
 }
 
+
+// ---------------------------------------------------------------- trazer animação de outro modelo (com prévia)
+interface Previa { anim: Animacao; fonte: { scene: THREE.Scene; mixer: THREE.AnimationMixer; clip: THREE.AnimationClip; root: THREE.Object3D; cam: THREE.PerspectiveCamera } }
+let previa: Previa | null = null;
+function desenharPip() {
+  const p = previa;
+  if (!p || !M) return;
+  const f = p.fonte;
+  const t = acaoAtual ? acaoAtual.time : 0;
+  f.mixer.setTime(Math.min(t, f.clip.duration));
+  const W = canvas.clientWidth, H = canvas.clientHeight, w = Math.round(Math.min(W * 0.28, 260)), h = Math.round(w * 1.15);
+  renderer.autoClear = true;
+  renderer.setScissorTest(true);
+  renderer.setViewport(10, 10, w, h);
+  renderer.setScissor(10, 10, w, h);
+  renderer.render(f.scene, f.cam);
+  renderer.setScissorTest(false);
+  renderer.setViewport(0, 0, W, H);
+}
+function ladoRetarget(root: THREE.Object3D, mapaSlots: Record<string, string>): LadoRetarget {
+  const bones: Record<string, THREE.Bone> = {};
+  const repouso = new Map<string, { q: THREE.Quaternion; p: THREE.Vector3 }>();
+  root.traverse((o) => { if ((o as THREE.Bone).isBone && !bones[o.name]) { bones[o.name] = o as THREE.Bone; repouso.set(o.name, { q: o.quaternion.clone(), p: o.position.clone() }); } });
+  return { root, bones, mapa: mapaSlots, repouso };
+}
+async function trazerDeOutroModelo() {
+  if (!M) return;
+  const r = await escolherParaAbrir();
+  if (!r) return;
+  await trazerDe(await lerArquivos(r.arquivos));
+}
+async function trazerDe(arqs: ArquivoEntrada[], indice?: number) {
+  if (!M) return null;
+  let c: ModeloCarregado;
+  try { c = await carregarModelo(arqs); } catch (e) { status('Não deu pra abrir: ' + (e as Error).message, 'erro'); return null; }
+  if (!c.clips.length) { status('Esse modelo não tem animações.', 'erro'); return null; }
+  const ossos: THREE.Bone[] = [];
+  c.root.updateMatrixWorld(true);
+  c.root.traverse((o) => { if ((o as THREE.Bone).isBone) ossos.push(o as THREE.Bone); });
+  const nomes = new Map<string, string>();
+  for (const [o, n] of c.nomeOriginal) if (o.name) nomes.set(o.name, n);
+  const orig = (b: THREE.Object3D) => nomes.get(b.name) ?? b.name;
+  const infos: OssoInfo[] = ossos.map((b) => ({ nome: orig(b), pai: b.parent && (b.parent as THREE.Bone).isBone ? orig(b.parent) : null, x: c.root.worldToLocal(b.getWorldPosition(_v())).x }));
+  const auto = mapaAutomatico(infos, c.vrm);
+  const paraThree = new Map(ossos.map((b) => [orig(b), b.name]));
+  const mapaO: Record<string, string> = {};
+  for (const s of Object.keys(auto) as Slot[]) { const t = paraThree.get(auto[s]!); if (t) mapaO[s] = t; }
+  const comuns = SLOTS.filter((s) => mapaO[s] && mapa[s]).length;
+  if (comuns < 8) { await avisar('Corpos difíceis de casar', `Só ${comuns} partes do corpo foram reconhecidas nos dois modelos. Associe as partes no Mapa do corpo e tente de novo.`); return null; }
+  let i = indice;
+  if (i === undefined) {
+    const { botao, form } = await abrirDialogo(`<h3>Trazer qual animação?</h3>
+      <p>${esc(c.principal)} · ${comuns} partes do corpo casam. Uma por vez, com prévia antes de aceitar.</p>
+      <label class="campo"><span>Animação</span><select name="a">${c.clips.map((x, k) => `<option value="${k}">${esc(x.name || 'Animação ' + (k + 1))} (${fmt(x.duration)} s)</option>`).join('')}</select></label>
+      <div class="rodape"><button class="btn" value="">Cancelar</button><button class="btn acc" value="ok">Ver prévia</button></div>`);
+    if (botao !== 'ok') return null;
+    i = Number(new FormData(form).get('a'));
+  }
+  const clipO = c.clips[i];
+  const cena = new THREE.Scene();
+  cena.background = new THREE.Color(cor('cena'));
+  cena.add(new THREE.HemisphereLight(0xdfe8ff, 0x55606f, 1.6), new THREE.DirectionalLight(0xffffff, 1.6));
+  cena.add(c.root);
+  const mixO = new THREE.AnimationMixer(c.root);
+  mixO.clipAction(clipO).play();
+  const ladoO = ladoRetarget(c.root, mapaO);
+  const ladoD = ladoRetarget(M.root, mapa as Record<string, string>);
+  for (const [n, v] of ladoD.repouso) { const rep = M.repouso.get(n); if (rep) { v.q.copy(rep.q); v.p.copy(rep.p); } }   // repouso dos nós, não a pose atual
+  const caixa = new THREE.Box3().setFromObject(c.root, true);
+  const alt = Math.max(0.1, caixa.getSize(_v()).y), ctr = caixa.getCenter(_v());
+  const cam = new THREE.PerspectiveCamera(35, 1 / 1.15, 0.01, alt * 50);
+  cam.position.set(ctr.x + alt * 0.6, ctr.y + alt * 0.3, ctr.z + alt * 2.2);
+  cam.lookAt(ctr);
+  const amostra = (t: number) => { mixO.setTime(t); c.root.updateMatrixWorld(true); };
+  const nome = nomeLivre(`${clipO.name || 'Animação'} (de ${c.principal.replace(/\.[^.]+$/, '')})`);
+  const { clip, ossos: n } = retargetar(ladoO, ladoD, amostra, clipO.duration, 30, nome);
+  mixO.setTime(0);
+  guardarDesfazer();
+  const a: Animacao = { id: novoId(), nome, clip, camadas: camadasPadrao(), ativa: 0, fps: 30, nova: true };
+  anims.push(a);
+  tocar(a.id);
+  previa = { anim: a, fonte: { scene: cena, mixer: mixO, clip: clipO, root: c.root, cam } };
+  const el = $('faixaTrazer');
+  el.innerHTML = `<span class="txt">Prévia: <b>${esc(nome)}</b> (${n} ossos levados). O original está no quadrinho.</span>
+    <button class="btn acc" id="ftSim">Aceitar</button><button class="btn" id="ftNao">Descartar</button>`;
+  el.hidden = false;
+  const fim = (aceitar: boolean) => {
+    el.hidden = true;
+    previa = null;
+    if (aceitar) { mudou(); status(`"${nome}" entrou na lista.`, 'ok'); return; }
+    const k = anims.indexOf(a);
+    if (k >= 0) anims.splice(k, 1);
+    desfazer.pop();
+    const prox = anims[Math.min(k, anims.length - 1)];
+    if (prox) tocar(prox.id); else pararTudo();
+    mudou(false);
+    status('Descartada.');
+  };
+  $('ftSim').onclick = () => fim(true);
+  $('ftNao').onclick = () => fim(false);
+  mudou();
+  return { anim: a, ossos: n, comuns, aceitar: () => fim(true), descartar: () => fim(false) };
+}
+$('bTrazer').onclick = trazerDeOutroModelo;
+
 // ---------------------------------------------------------------- salvar
 function nomeSaida() {
   if (!M) return 'modelo.glb';
@@ -2519,6 +2625,7 @@ function umQuadro(dt: number) {
   linha.desenhar();
   controls.update();
   renderizar();
+  desenharPip();
 }
 renderer.setAnimationLoop(() => umQuadro(Math.min(relogio.getDelta(), 0.1)));
 coresDaCena();
@@ -2538,7 +2645,7 @@ Object.assign(window, {
     comecarEdicao, escreverEdicao, terminarEdicao,
     espelharPose, espelharAjuste, grudarPe, emendarLoop, esticarTrecho, poseAPose, exagerar, guardarPose, usarPoseGuardada,
     colocarAcessorio: (encaixe: string, nome: string, bytes: ArrayBuffer) => { const e = M?.encaixes.find((x) => x.nome === encaixe); return e ? colocarAcessorio(e, { nome, bytes }) : null; },
-    desenhar: () => umQuadro(0),
+    desenhar: () => umQuadro(0), trazerDe,
     mudarDuracao, mudarFps, apagarChave, aplicarConfig, abrirConfig, abrirPainelChaves,
     camposRot, camposPos, painel, linha, cfg,
     estado: () => ({ M, anims, lixeira, mapa, mapaAuto, atual, acaoAtual, tc, alvoIK, ossoSel, edicao, sujo, quadroAtual: quadroAtual(), quadros: quadros(),

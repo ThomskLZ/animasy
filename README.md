@@ -88,6 +88,28 @@ mesma da Godot). O projeto lembra o arquivo e o encaixe. Por padrão o acessóri
 
 Atalhos e dicas ficam no botão **?**.
 
+## Projeto com Blender (opcional)
+
+Se o original das animações é um `.blend`, o `.glb` salvo pelo Animasy seria sobrescrito no próximo export do Blender.
+Pra trazer o ajuste de volta, rode no Blender (com o `.blend` **fechado** no programa) um script que copia as
+animações mudadas pra dentro do `.blend`, reexporta o `.glb` e faz backup antes. Exemplo do projeto do Linque:
+
+```
+blender -b linque.blend --factory-startup --python lq_importar_glb.py -- ARQUIVO_DO_ANIMASY.glb Guard GuardWalk
+```
+
+Sem nomes no fim, ele traz toda animação que difere da do `.blend` (ruído de até 0,1° é ignorado). O Animasy em si
+não chama o Blender: o fluxo é salvar aqui e rodar o comando.
+
+## Trazer animação de outro personagem
+
+Botão **Trazer de outro modelo…** (aba Ver). Escolha o arquivo e **uma** animação; o Animasy converte pela orientação
+dos ossos (mapa do corpo dos dois modelos) e pela altura do quadril, e mostra a prévia: o personagem de origem num
+quadradinho no canto, o seu com a animação nova. Só entra na lista se você clicar em **Aceitar**. Funciona melhor
+com proporções e pose de repouso parecidas (os dois em T, ou os dois em A): a conta leva a *variação* do osso, não a pose
+absoluta. Primeiro passe: quando os repousos diferem (ex.: robô em T, personagem em A) os braços saem mais abertos que o
+original; aceite e corrija com o Ajustar, ou descarte.
+
 ## Para quem programa
 
 ```
